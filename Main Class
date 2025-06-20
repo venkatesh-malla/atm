@@ -1,0 +1,45 @@
+package atm;
+
+abstract class Atm1 implements atm {
+    private double balance;
+    private double depositAmount;
+    private double withdrawAmount;
+
+    // Constructor
+    public Atm1() {
+        super();
+    }
+
+    // Getter and Setter for balance
+    public double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(double balance) {
+        this.balance = balance;
+    }
+
+    // Getter and Setter for depositAmount
+    public double getDepositAmount() {
+        return depositAmount;
+    }
+
+    public void setDepositAmount(double depositAmount) {
+        this.depositAmount = depositAmount;
+    }
+
+    // Getter and Setter for withdrawAmount
+    public double getWithdrawAmount() {
+        return withdrawAmount;
+    }
+
+    public void setWithdrawAmount(double withdrawAmount) {
+        this.withdrawAmount = withdrawAmount;
+    }
+
+    // Overriding toString Method
+    @Override
+    public String toString() {
+        return "Atm [Balance = " + balance + ", Deposit Amount = " + depositAmount + ", Withdraw Amount = " + withdrawAmount + "]";
+    }
+}
