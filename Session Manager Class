@@ -1,0 +1,28 @@
+package atm;
+
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class SessionManager {
+    private static final long TIMEOUT = 2 * 60 * 1000; // 2 minutes
+    private Timer timer = new Timer(true);
+
+    public void startSession(Runnable logoutCallback) {
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println("Session timed out. Logging out...");
+                logoutCallback.run();
+            }
+        }, TIMEOUT);
+    }
+
+    public void resetSession() {
+        timer.cancel();
+        timer = new Timer(true);
+    }
+
+    public void stopSession() {
+        timer.cancel();
+    }
+}
