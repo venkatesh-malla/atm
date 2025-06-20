@@ -1,0 +1,133 @@
+package atm;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class atmoperation implements atm {
+    private int accountNumber;
+    private double balance;
+
+    public atmoperation(int accountNumber) {
+        this.accountNumber = accountNumber;
+        fetchBalance();
+    }
+
+    private void fetchBalance() {
+        String query = "SELECT balance FROM users WHERE account_number = ?";
+        try (Connection conn = databaseconnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, accountNumber);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                balance = rs.getDouble("balance");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching balance: " + e.getMessage());
+        }
+    }
+
+    private void updateBalance(double newBalance) {
+        String query = "UPDATE users SET balance = ? WHERE account_number = ?";
+        try (Connection conn = databaseconnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setDouble(1, newBalance);
+            pstmt.setInt(2, accountNumber);
+            pstmt.executeUpdate();
+            this.balance = newBalance;
+        } catch (SQLException e) {
+            System.out.println("Error updating balance: " + e.getMessage());
+        }
+    }
+
+    private void logTransaction(String type, double amount) {
+        String query = "INSERT INTO transactions (account_number, type, amount, date_time, ip_address) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = databaseconnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, accountNumber);
+            pstmt.setString(2, type);
+            pstmt.setDouble(3, amount);
+            pstmt.setString(4, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            pstmt.setString(5, getIpAddress());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error logging transaction: " + e.getMessage());
+        }
+    }
+
+    private String getIpAddress() {
+        // Replace this with the actual logic to fetch the user's IP address
+        return "127.0.0.1";
+    }
+
+    @Override
+    public void viewBalance() {
+        System.out.println("Available Balance: " + balance);
+    }
+
+    @Override
+    public void withdrawAmount(double withdrawAmount) {
+        if (withdrawAmount % 500 == 0) {
+            if (withdrawAmount <= balance) {
+                updateBalance(balance - withdrawAmount);
+                logTransaction("Withdraw", withdrawAmount);
+                System.out.println("Collect the cash: " + withdrawAmount);
+                viewBalance();
+            } else {
+                System.out.println("Insufficient funds");
+            }
+        } else {
+            System.out.println("Enter the amount in multiples of 500");
+        }
+    }
+
+    @Override
+    public void depositAmount(double depositAmount) {
+        updateBalance(balance + depositAmount);
+        logTransaction("Deposit", depositAmount);
+        System.out.println("Deposited Amount: " + depositAmount);
+        viewBalance();
+    }
+
+    @Override
+    public void viewMiniStatement() {
+        String query = "SELECT * FROM transactions WHERE account_number = ?";
+        try (Connection conn = databaseconnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, accountNumber);
+            ResultSet rs = pstmt.executeQuery();
+            System.out.println("Mini Statement:");
+            while (rs.next()) {
+                System.out.println(rs.getString("date_time") + " - " + rs.getString("type") + ": " + rs.getDouble("amount") + " (IP: " + rs.getString("ip_address") + ")");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching mini statement: " + e.getMessage());
+        }
+    }
+
+    public void transferFunds(int recipientAccount, double amount) {
+        if (amount <= balance) {
+            // Deduct from sender
+            updateBalance(balance - amount);
+            logTransaction("Transfer Out", amount);
+
+            // Add to recipient
+            String query = "UPDATE users SET balance = balance + ? WHERE account_number = ?";
+            try (Connection conn = databaseconnection.connect();
+                 PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setDouble(1, amount);
+                pstmt.setInt(2, recipientAccount);
+                pstmt.executeUpdate();
+                System.out.println("Transfer successful!");
+                logTransaction("Transfer In", amount); // Log for the recipient
+            } catch (SQLException e) {
+                System.out.println("Error transferring funds: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Insufficient balance for the transfer.");
+        }
+    }
+}
