@@ -1,0 +1,128 @@
+package atm;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Scanner;
+
+public class userinterface {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("Welcome to the ATM Machine");
+        System.out.println("Please enter your account number:");
+        int accountNumber = sc.nextInt();
+
+        System.out.println("Please enter your PIN:");
+        int pin = sc.nextInt();
+
+        if (authenticateUser(accountNumber, pin)) {
+            atmoperation atm = new atmoperation(accountNumber);
+            SessionManager sessionManager = new SessionManager();
+            sessionManager.startSession(() -> {
+                System.out.println("\nSession timed out. Logging out...");
+                System.exit(0);
+            }); // Logout callback
+
+            while (true) {
+                sessionManager.resetSession(); // Reset session timeout on activity
+                System.out.println("\n1. View Balance");
+                System.out.println("2. Withdraw");
+                System.out.println("3. Deposit");
+                System.out.println("4. View Mini Statement");
+                System.out.println("5. Exit");
+                System.out.println("6. Create New Account");
+                System.out.println("7. Transfer Funds");
+                System.out.println("Please enter your choice:");
+                int choice = sc.nextInt();
+
+                switch (choice) {
+                    case 1:
+                        atm.viewBalance();
+                        break;
+                    case 2:
+                        System.out.println("Enter amount to withdraw:");
+                        double withdrawAmount = sc.nextDouble();
+                        atm.withdrawAmount(withdrawAmount);
+                        break;
+                    case 3:
+                        System.out.println("Enter amount to deposit:");
+                        double depositAmount = sc.nextDouble();
+                        atm.depositAmount(depositAmount);
+                        break;
+                    case 4:
+                        atm.viewMiniStatement();
+                        break;
+                    case 5:
+                        System.out.println("Thank you for using the ATM. Goodbye!");
+                        sc.close(); // Closing the scanner before exiting
+                        sessionManager.stopSession(); // Stop session manager
+                        return;
+                    case 6: // Account creation
+                        System.out.println("Enter new account number:");
+                        int newAccountNumber = sc.nextInt();
+                        System.out.println("Set a PIN:");
+                        int newPin = sc.nextInt();
+                        System.out.println("Enter initial deposit:");
+                        double initialDeposit = sc.nextDouble();
+                        if (accountmanagement.createAccount(newAccountNumber, newPin, initialDeposit)) {
+                            System.out.println("Account successfully created!");
+                        } else {
+                            System.out.println("Failed to create account.");
+                        }
+                        break;
+                    case 7: // Fund transfer
+                        System.out.println("Enter recipient account number:");
+                        int recipientAccount = sc.nextInt();
+                        System.out.println("Enter transfer amount:");
+                        double transferAmount = sc.nextDouble();
+                        atm.transferFunds(recipientAccount, transferAmount);
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
+            }
+        } else {
+            System.out.println("Incorrect account number or PIN.");
+        }
+    }
+
+    private static boolean authenticateUser(int accountNumber, int pin) {
+        String checkLockQuery = "SELECT failed_attempts, pin FROM users WHERE account_number = ?";
+        String updateFailedAttempts = "UPDATE users SET failed_attempts = failed_attempts + 1 WHERE account_number = ?";
+        String resetFailedAttempts = "UPDATE users SET failed_attempts = 0 WHERE account_number = ?";
+        int maxAttempts = 3;
+
+        try (Connection conn = databaseconnection.connect();
+             PreparedStatement checkLockStmt = conn.prepareStatement(checkLockQuery);
+             PreparedStatement updateFailStmt = conn.prepareStatement(updateFailedAttempts);
+             PreparedStatement resetFailStmt = conn.prepareStatement(resetFailedAttempts)) {
+
+            checkLockStmt.setInt(1, accountNumber);
+            ResultSet rs = checkLockStmt.executeQuery();
+            if (rs.next()) {
+                if (rs.getInt("failed_attempts") >= maxAttempts) {
+                    System.out.println("Account locked due to too many failed login attempts.");
+                    return false;
+                }
+
+                String storedHashedPin = rs.getString("pin");
+                if (storedHashedPin.equals(SecurityUtils.hashPin(pin))) {
+                    resetFailStmt.setInt(1, accountNumber);
+                    resetFailStmt.executeUpdate(); // Reset failed attempts on success
+                    return true;
+                } else {
+                    updateFailStmt.setInt(1, accountNumber);
+                    updateFailStmt.executeUpdate(); // Increment failed attempts
+                    System.out.println("Incorrect PIN. Try again.");
+                    return false;
+                }
+            }
+            return false;
+        } catch (SQLException e) {
+            System.out.println("Error authenticating user: " + e.getMessage());
+            return false;
+        }
+    }
+}
