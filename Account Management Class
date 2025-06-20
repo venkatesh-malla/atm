@@ -1,0 +1,26 @@
+package atm;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class accountmanagement {
+
+    public static boolean createAccount(int accountNumber, int pin, double initialBalance) {
+        String hashedPin = SecurityUtils.hashPin(pin); // Hashing the PIN
+        String query = "INSERT INTO users (account_number, pin, balance) VALUES (?, ?, ?)";
+        try (Connection conn = databaseconnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, accountNumber);
+            pstmt.setString(2, hashedPin); // Store hashed PIN
+            pstmt.setDouble(3, initialBalance);
+            pstmt.executeUpdate();
+            System.out.println("Account created successfully!");
+            return true;
+        } catch (SQLException e) {
+            System.out.println("Error creating account: " + e.getMessage());
+            return false;
+        }
+    }
+}
+
