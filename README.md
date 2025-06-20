@@ -15,6 +15,10 @@ This is a Java-based ATM system that provides basic banking functionalities such
 ## Project Structure
 
 -ATM-Project
+        
+        
+        
+        
         atm                     # Package for all Java classes
         Main.java                # Entry point of the application
         atm.java                 # Interface for ATM operations
