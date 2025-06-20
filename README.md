@@ -14,27 +14,17 @@ This is a Java-based ATM system that provides basic banking functionalities such
 
 ## Project Structure
 
--ATM-Project/
-│
-├── src/                         # Source code directory
-│   └── atm/                     # Package for all Java classes
-│       ├── Main.java                # Entry point of the application
-│       ├── atm.java                 # Interface for ATM operations
-│       ├── atmoperation.java        # Implements ATM functionality (withdraw, deposit, etc.)
-│       ├── userinterface.java       # Manages user interactions and session flow
-│       ├── databaseconnection.java  # Handles database connection management
-│       ├── accountmanagement.java   # Provides functionality for account creation
-│       ├── sessionmanager.java      # Manages user session timeout logic
-│       ├── securityutils.java       # Provides utilities for secure PIN hashing
-│       └── testconnection.java      # Verifies database connectivity
-│
-├── scripts/                     # Database setup scripts
-│   └── setup.sql                # SQL script to create tables and insert sample data
-│
-├── .gitignore                   # Specifies files and directories to be ignored by Git
-├── README.md                    # Documentation file for the project
-├── pom.xml                      # Maven configuration file (optional, for dependency management)
-└── LICENSE                      # License file (optional, include if needed)
+-ATM-Project
+       └── atm/                     # Package for all Java classes
+       ├── Main.java                # Entry point of the application
+       ├── atm.java                 # Interface for ATM operations
+       ├── atmoperation.java        # Implements ATM functionality (withdraw, deposit, etc.)
+       ├── userinterface.java       # Manages user interactions and session flow
+       ├── databaseconnection.java  # Handles database connection management
+       ├── accountmanagement.java   # Provides functionality for account creation
+       ├── sessionmanager.java      # Manages user session timeout logic
+       ├── securityutils.java       # Provides utilities for secure PIN hashing
+       └── testconnection.java      # Verifies database connectivity
 
 
 ## Prerequisites
